@@ -17,6 +17,7 @@ from ta.momentum import StochasticOscillator
 from ta.trend import MACD
 import plotly.express as px
 
+'''
 def import_data():
     if not mt5.initialize():
         print("initialize() failed, error code =",mt5.last_error())
@@ -40,6 +41,7 @@ def import_data():
     #rates_frame.to_csv('BTC20_21.csv')
     
     return rates_frame
+'''
 
 # Boolinger
 def tec1(data):
@@ -73,6 +75,107 @@ def transactions(vol, pips, df):
         day0=df.iloc[0,0]
 
         closed=df[(df['close']>=(precio_transaccion+pips/100))|(df['close']<=(precio_transaccion-pips/100))]
+        closed_price=closed.iloc[0,5]
+        closed_transaction= closed_price*vol
+        day1=closed.iloc[0,0]
+
+        ret=246*(closed_transaction/posicion-1)/(day1-day0)
+
+        rett.append(ret)
+
+        df=df.loc[closed.iloc[0,0]:]
+    
+    return rett
+
+def capital(vol, pip_tp, pip_sl, df):
+    dayss=[]
+    cashh=[]
+    cash=100000
+    while len(df)>2:
+        precio_transaccion=df['close'].iloc[0]
+        posicion=precio_transaccion*vol
+        cash=cash-posicion
+        day0=df.iloc[0,0]
+
+        closed=df[(df['close']>=(precio_transaccion+pip_tp/100))|(df['close']<=(precio_transaccion-pip_sl/100))]
+        closed_price=closed.iloc[0,5]
+        closed_transaction= closed_price*vol
+
+        cash=cash+closed_transaction
+        cashh.append(cash)
+        df=df.loc[closed.iloc[0,0]:]
+        dayss.append(day0)
+    
+    dff = pd.DataFrame(dict(
+    days = dayss,
+    capital = cashh))
+    
+    return dff
+
+def capitalgrid(vol, pips, df):
+    dayss=[]
+    cashh=[]
+    cash=100000
+    while len(df)>2:
+        precio_transaccion=df['close'].iloc[0]
+        posicion=precio_transaccion*vol
+        cash=cash-posicion
+        day0=df.iloc[0,0]
+
+        closed=df[(df['close']>=(precio_transaccion+pips/100))|(df['close']<=(precio_transaccion-pips/100))]
+        closed_price=closed.iloc[0,5]
+        closed_transaction= closed_price*vol
+
+        cash=cash+closed_transaction
+        cashh.append(cash)
+        df=df.loc[closed.iloc[0,0]:]
+        dayss.append(day0)
+    
+    dff = pd.DataFrame(dict(
+    days = dayss,
+    capital = cashh))
+    
+    return dff.iloc[-1,1]
+
+# For i,j loop es un grid search
+# Podemos usar un gridsearch sin PSO
+def grid_search(vol, pip_sl, pip_tp, df):
+    #Create dataframe
+    dif_port = pd.DataFrame()
+    sl_list = []
+    tp_list = []
+    max_loss_list = []
+    Sharpe_list = []
+    #Iterate with different parameteres
+    for i in vol:
+        for j in pip_sl:
+            for k in pip_tp:
+                ent_capital = capital(i, j, k, df)
+                #Obtaining the sharpe ratio
+                Portfolio = pd.DataFrame()
+                Portfolio["Portfolio Value"] = ent_capital.iloc[:,1]
+                Portfolio["Return"] = Portfolio["Portfolio Value"].pct_change(1)
+                Sharpe= Portfolio["Return"].mean() /Portfolio["Return"].std()
+                sl_list.append(j)
+                tp_list.append(k)
+                max_loss_list.append(i)
+                Sharpe_list.append(Sharpe)  
+    
+    dif_port["Volume"] = max_loss_list
+    dif_port["Stop Loss"] = sl_list
+    dif_port["Take profit"] = tp_list
+    dif_port["Sharpe"] = Sharpe_list
+    return dif_port
+
+def transactions_2(vol, pip_tp, pip_sl, df):
+    rett=[]
+    
+    while len(df)>2:
+        precio_transaccion=df['close'].iloc[0]
+        posicion=precio_transaccion*vol
+        day0=df.iloc[0,0]
+
+        closed=df[(df['close']>=(precio_transaccion+pip_tp/100))|(df['close']<=(precio_transaccion-pip_sl/100))]
         closed_price=closed.iloc[0,5]
         closed_transaction= closed_price*vol
         day1=closed.iloc[0,0]
