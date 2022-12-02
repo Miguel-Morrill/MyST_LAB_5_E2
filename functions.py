@@ -16,6 +16,8 @@ from ta.volatility import BollingerBands
 from ta.momentum import StochasticOscillator
 from ta.trend import MACD
 import plotly.express as px
+import pyswarms as ps
+from pyswarms.utils.functions import single_obj as fx
 
 '''
 def import_data():
@@ -188,3 +190,41 @@ def transactions_2(vol, pip_tp, pip_sl, df):
     
     return rett
 
+
+
+def capital_pso2(vol, pips):
+    try:
+        df = pd.read_csv('dfpso.csv')
+        dayss=[]
+        cashh=[]
+        cash=100000
+        while len(df)>2:
+            precio_transaccion=df['close'].iloc[0]
+            posicion=precio_transaccion*vol
+            cash=cash-posicion
+            day0=df.iloc[0,0]
+
+            closed=df[(df['close']>=(precio_transaccion+pips/100))|(df['close']<=(precio_transaccion-pips/100))]
+            closed_price=closed.iloc[0,5]
+            closed_transaction= closed_price*vol
+
+            cash=cash+closed_transaction
+            cashh.append(cash)
+            df=df.loc[closed.iloc[0,0]:]
+            dayss.append(day0)
+
+        dff = pd.DataFrame(dict(
+        days = dayss,
+        capital = cashh))
+        
+    except:
+        return 10000000
+    
+    return -dff.iloc[-1,1]
+
+
+def f(x):
+    x_ = x[:, 0]
+    y_ = x[:, 1]
+    z=capital_pso2(x_,y_)
+    return z

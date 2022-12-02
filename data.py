@@ -17,6 +17,8 @@ from ta.momentum import StochasticOscillator
 from ta.trend import MACD
 import plotly.express as px
 import functions as fun
+import pyswarms as ps
+from pyswarms.utils.functions import single_obj as fx
 
 data_E=pd.read_csv('BTC19_20.csv')
 data_P=pd.read_csv('BTC20_21.csv')
@@ -51,3 +53,9 @@ df_p = data_PS2[(data_PS2['stochastic_buy_signal']==True) | (data_PS2['stochasti
 a2=fun.capital(best_param.iloc[0,0], best_param.iloc[0,1],best_param.iloc[0,2], df_p)
 
 transacciones_a2=fun.transactions_2(best_param.iloc[0,0], best_param.iloc[0,1],best_param.iloc[0,2], df_p)
+
+options = {'c1': 1, 'c2': 1, 'w': 0.9}
+bounds = np.array([[7, 10], [0, 100000]])   # Add x and y limit to (-3, 3)
+optimizer = ps.single.GlobalBestPSO(n_particles=100, dimensions=2, bounds=bounds, options=options)
+best_cost, best_pos = optimizer.optimize(fun.f, iters=1000)
+best_pos = np.round(best_pos, 2)
